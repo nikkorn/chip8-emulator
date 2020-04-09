@@ -94,6 +94,13 @@ public class Machine {
 				break;
 				
 			/**
+			 * (0x3XNN) Skips the next instruction if register X equals NN. 
+			 */
+			case 0x3000:
+				PC += (registers[(opcode & 0x0F00) >> 8] == (opcode & 0x00FF)) ? 4 : 2;
+				break;
+			
+			/**
 			 * (0x6XNN) Sets register X to NN.
 			 */
 			case 0x6000:
@@ -123,14 +130,90 @@ public class Machine {
 			case 0xD000:
 				// TODO Do this for real!
 				System.out.println("draw!");
-				pixels[23] = true;
+			
+				
+				
+				// TODO Replace this stolen code.
+				short x = registers[(opcode & 0x0F00) >> 8];
+				short y = registers[(opcode & 0x00F0) >> 4];
+				short height = (short) (opcode & 0x000F);
+				short pixel;
+				 
+				registers[0xF] = 0;
+				for (int yline = 0; yline < height; yline++) {
+				    pixel = memory[I + yline];
+				    for(int xline = 0; xline < 8; xline++)
+				    {
+				      if((pixel & (0x80 >> xline)) != 0)
+				      {
+				        if(pixels[(x + xline + ((y + yline) * 64))])
+				        	registers[0xF] = 1;                                 
+				        pixels[x + xline + ((y + yline) * 64)] = !pixels[x + xline + ((y + yline) * 64)];
+				      }
+				    }
+				}
+				
+				
 				
 				// We will need to redraw the display.
 				hasDisplayChanged = true;
 				PC += 2;
 				break;
+		
+				
+				
+				
 			
-			// ....
+			/**
+			 * (0xF000) Various register operations.
+			 */
+			case 0xF000:
+				switch (opcode & 0x00FF) {
+					case 0x0007:
+						PC += 2;
+						break;
+						
+					case 0x000A:
+						PC += 2;
+						break;
+						
+					case 0x0015:
+						PC += 2;
+						break;
+						
+					case 0x0018:
+						PC += 2;
+						break;
+						
+					/**
+					 * Adds VX to I. VF is set to 1 when there is a range overflow (I+VX>0xFFF), and to 0 when there isn't.
+					 */
+					case 0x001E:
+						registers[0xF] = (byte) ((I + registers[(opcode & 0x0F00) >> 8] > 0xFFF) ? 1 : 0);
+						I += registers[(opcode & 0x0F00) >> 8];
+						PC += 2;
+						break;
+						
+					case 0x0029:
+						PC += 2;
+						break;
+						
+					case 0x0033:
+						PC += 2;
+						break;
+						
+					case 0x0055:
+						PC += 2;
+						break;
+						
+					case 0x0065:
+						PC += 2;
+						break;
+						
+					default:
+						throw new RuntimeException("unknown opcode: 0x" + opcode);
+				}
+				break;
 				
 			default:
 				throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
