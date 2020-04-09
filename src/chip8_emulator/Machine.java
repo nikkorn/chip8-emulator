@@ -21,6 +21,15 @@ public class Machine {
 	 */
 	private short I = 0;
 	/**
+	 * The pixel values for the display.
+	 * White if true, otherwise black.
+	 */
+	private boolean[] pixels = new boolean[Constants.DISPLAY_WIDTH * Constants.DISPLAY_HEIGHT];
+	/**
+	 * Whether the display has changed as a side-effect of exectuing the last opcode.
+	 */
+	private boolean hasDisplayChanged = false;
+	/**
 	 * The ROM data.
 	 */
 	private byte[] rom;
@@ -43,9 +52,15 @@ public class Machine {
 		}
 	}
 	
+	/**
+	 * Executes a single cycle of fetching the next program opcode and executing it.
+	 */
 	public void executeCycle() {
+		// Reset the flag that would cause a redraw.
+		hasDisplayChanged = false;
+		
 		// Fetch the next opcode. This is a 16bit value matching the two bytes in memory starting from the position defined by PC.
-		short opcode = (short)((memory[PC] << 8) | memory[PC + 1]);
+		int opcode = ((memory[PC] & 0xFF) << 8) | memory[PC + 1] & 0xFF;
 		
 		// Carry out an operation defined by the current opcode.
 		switch (opcode & 0xF000) {
@@ -55,7 +70,11 @@ public class Machine {
 			case 0x0000:
 				switch (opcode & 0x000F) {
 					case 0x0000:
-						// TODO Clear the screen.
+						// Clear the screen.
+						pixels = new boolean[Constants.DISPLAY_WIDTH * Constants.DISPLAY_HEIGHT];
+						
+						// We will need to redraw the display.
+						hasDisplayChanged = true;
 						break;
 						
 					case 0x000E:
@@ -81,6 +100,35 @@ public class Machine {
 				registers[(opcode & 0x0F00) >> 8] = (byte) (opcode & 0x00FF);
 				PC += 2;
 				break;
+				
+			/**
+			 * (0x7XNN) Adds NN to register X. (Carry flag is not changed)
+			 */
+			case 0x7000:
+				registers[(opcode & 0x0F00) >> 8] += (byte) (opcode & 0x00FF);
+				PC += 2;
+				break;
+				
+			/**
+			 * (0xANNN) Sets I to the address NNN.
+			 */
+			case 0xA000:
+				I = (short) (opcode & 0x0FFF);
+				PC += 2;
+				break;
+				
+			/**
+			 * (0xDXYN) Draws a sprite at coordinate (register X, register Y) that has a width of 8 pixels and a height of N.
+			 */
+			case 0xD000:
+				// TODO Do this for real!
+				System.out.println("draw!");
+				pixels[23] = true;
+				
+				// We will need to redraw the display.
+				hasDisplayChanged = true;
+				PC += 2;
+				break;
 			
 			// ....
 				
@@ -91,8 +139,20 @@ public class Machine {
 		// TODO Update timers
 	}
 	
+	/**
+	 * Get the display bits.
+	 * @return The display bits.
+	 */
+	public boolean[] getDisplayBits() {
+		return this.pixels;
+	}
+	
+	/**
+	 * Gets whether the application display will have to be updated.
+	 * @return Whether the application display will have to be updated.
+	 */
 	public boolean requiresDisplayUpdate() {
-		return true;
+		return this.hasDisplayChanged;
 	}
 	
 	/**
@@ -103,6 +163,7 @@ public class Machine {
 		registers = new byte[16];
 		PC = 0;
 		I = 0;
+		pixels = new boolean[Constants.DISPLAY_WIDTH * Constants.DISPLAY_HEIGHT];
 		
 		// Load the rom into memory from address 0x200 to end 0xFFF.
 		for (int index = 0; index < this.rom.length; index++) {

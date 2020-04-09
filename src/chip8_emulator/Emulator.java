@@ -1,5 +1,8 @@
 package chip8_emulator;
 
+/**
+ * The chip8 emulator.
+ */
 public class Emulator {
 	/**
 	 * The display.
@@ -24,12 +27,20 @@ public class Emulator {
 		
 		// The emulation loop.
 		while (true) {
-			// Emulate Machine Cycle
+			// Emulate Machine Cycle.
 			this.machine.executeCycle();
 			
-			// Update Display (maybe)
+			// Update the application display if thhe last mahcine operation updated any pixels. 
 			if (this.machine.requiresDisplayUpdate()) {
-				// TODO Update the display.
+				// Get the display bits.
+				boolean[] pixels = this.machine.getDisplayBits();
+				
+				// Draw each pixel to the application display.
+		        for (int y = 0; y < Constants.DISPLAY_HEIGHT; y++) {
+		        	for (int x = 0; x < Constants.DISPLAY_WIDTH; x++) {
+		        		this.display.setPixel(x, y, pixels[(y * Constants.DISPLAY_WIDTH) + x]);
+		            }        	
+		        }
 				
 				// Repaint the display.
 				this.display.repaint();
