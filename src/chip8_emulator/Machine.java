@@ -19,12 +19,12 @@ public class Machine {
 	/**
 	 * The index register.
 	 */
-	private short I = 0;
+	private short I;
 	/**
 	 * The stack and stack pointer used for tracking calls through subroutines.
 	 */
 	private short[] stack = new short[16];
-	private short SP = 0;
+	private short SP;
 	/**
 	 * The pixel values for the display.
 	 * White if true, otherwise black.
@@ -42,6 +42,10 @@ public class Machine {
 	 * The input key states.
 	 */
 	private boolean[] keys = new boolean[16];
+	/** 
+	 * The machine timers.
+	 */
+	private byte delayTimer, soundTimer;
 	
 	/**
 	 * Sets the rom data.
@@ -232,21 +236,27 @@ public class Machine {
 			 */
 			case 0xF000:
 				switch (opcode & 0x00FF) {
+					/**
+					 * Sets register X to the value of the delay timer.
+					 */
 					case 0x0007:
+						registers[(opcode & 0x0F00) >> 8] = delayTimer;
 						PC += 2;
 						break;
 						
 					case 0x000A:
-						PC += 2;
-						break;
+						throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 						
+					/**
+					 * Sets the delay timer to register X.
+					 */
 					case 0x0015:
+						delayTimer = registers[(opcode & 0x0F00) >> 8];
 						PC += 2;
 						break;
 						
 					case 0x0018:
-						PC += 2;
-						break;
+						throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 						
 					/**
 					 * Adds VX to I. VF is set to 1 when there is a range overflow (I+VX>0xFFF), and to 0 when there isn't.
@@ -258,23 +268,27 @@ public class Machine {
 						break;
 						
 					case 0x0029:
-						PC += 2;
-						break;
+						throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 						
 					case 0x0033:
-						PC += 2;
-						break;
+						throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 						
 					case 0x0055:
-						PC += 2;
-						break;
+						throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 						
+					/**
+					 * Fills register 0 to X (including X) with values from memory starting at address I.
+					 * The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+					 */
 					case 0x0065:
+						for (int index = 0; index <= (opcode & 0x0F00) >> 8; index++) {
+							registers[index] = memory[I + index];
+						}
 						PC += 2;
 						break;
 						
 					default:
-						throw new RuntimeException("unknown opcode: 0x" + opcode);
+						throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 				}
 				break;
 				
@@ -283,6 +297,9 @@ public class Machine {
 		}
 		 
 		// TODO Update timers
+		if (delayTimer > 0) {
+			delayTimer--;
+		}
 	}
 	
 	/**

@@ -27,6 +27,13 @@ public class Emulator {
 		
 		// The emulation loop.
 		while (true) {
+			// TODO Remove!!!!!!!
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
 			// Emulate Machine Cycle.
 			this.machine.executeCycle();
 			
