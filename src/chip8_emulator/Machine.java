@@ -67,8 +67,9 @@ public class Machine {
 	
 	/**
 	 * Executes a single cycle of fetching the next program opcode and executing it.
+	 * @param updateTimers Whether to update the delay and sound timers.
 	 */
-	public void executeCycle() {
+	public void executeCycle(boolean updateTimers) {
 		// Reset the flag that would cause a redraw.
 		hasDisplayChanged = false;
 		
@@ -295,10 +296,16 @@ public class Machine {
 			default:
 				throw new RuntimeException("unknown opcode: 0x" + Integer.toHexString(opcode));
 		}
-		 
-		// TODO Update timers
-		if (delayTimer > 0) {
-			delayTimer--;
+		
+		// Update timers.
+		if (updateTimers) {
+			if (delayTimer > 0) {
+				delayTimer--;
+			}
+			
+			if (soundTimer > 0) {
+				soundTimer--;
+			}
 		}
 	}
 	

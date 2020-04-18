@@ -25,19 +25,24 @@ public class Emulator {
 		this.machine = new Machine();
 		this.machine.setRomData(rom.getData());
 		
+		long timerUpdateCountdown = 0;
+		
 		// The emulation loop.
 		while (true) {
-			// TODO Remove!!!!!!!
+			// Simulate 500hz CPU cycle.
 			try {
-				Thread.sleep(1);
+				Thread.sleep(2);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			
 			// Emulate Machine Cycle.
-			this.machine.executeCycle();
+			this.machine.executeCycle(timerUpdateCountdown == 0);
 			
-			// Update the application display if thhe last mahcine operation updated any pixels. 
+			// Update the timer update count-down.
+			timerUpdateCountdown = timerUpdateCountdown == 0 ? 8 : timerUpdateCountdown - 1;
+			
+			// Update the application display if the last machine operation updated any pixels. 
 			if (this.machine.requiresDisplayUpdate()) {
 				// Get the display bits.
 				boolean[] pixels = this.machine.getDisplayBits();
